@@ -8,6 +8,11 @@ document.addEventListener("DOMContentLoaded", () => {
   const activityInput = document.getElementById("activity");
   const closeRegistrationModal = document.querySelector(".close-modal");
 
+  // Share modal elements
+  const shareModal = document.getElementById("share-modal");
+  const shareActivityName = document.getElementById("share-activity-name");
+  const closeShareModalBtn = document.querySelector(".close-share-modal");
+
   // Search and filter elements
   const searchInput = document.getElementById("activity-search");
   const searchButton = document.getElementById("search-button");
@@ -24,6 +29,9 @@ document.addEventListener("DOMContentLoaded", () => {
   const loginForm = document.getElementById("login-form");
   const closeLoginModal = document.querySelector(".close-login-modal");
   const loginMessage = document.getElementById("login-message");
+
+  // Activity categories with corresponding colors
+  const SCHOOL_NAME = "Mergington High School";
 
   // Activity categories with corresponding colors
   const activityTypes = {
@@ -553,6 +561,9 @@ document.addEventListener("DOMContentLoaded", () => {
         </ul>
       </div>
       <div class="activity-card-actions">
+        <button class="share-activity-btn icon-button" data-activity="${name}" aria-label="Share ${name}">
+          <span>🔗</span> Share
+        </button>
         ${
           currentUser
             ? `
@@ -575,6 +586,12 @@ document.addEventListener("DOMContentLoaded", () => {
     const deleteButtons = activityCard.querySelectorAll(".delete-participant");
     deleteButtons.forEach((button) => {
       button.addEventListener("click", handleUnregister);
+    });
+
+    // Add click handler for share button
+    const shareBtn = activityCard.querySelector(".share-activity-btn");
+    shareBtn.addEventListener("click", () => {
+      openShareModal(name, details);
     });
 
     // Add click handler for register button (only when authenticated)
@@ -798,6 +815,111 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     );
   }
+
+  // Open share modal for a specific activity
+  function openShareModal(name, details) {
+    const formattedSchedule = formatSchedule(details);
+    shareActivityName.textContent = name;
+    shareModal.dataset.activityName = name;
+    shareModal.dataset.description = details.description;
+    shareModal.dataset.schedule = formattedSchedule;
+    shareModal.classList.remove("hidden");
+    setTimeout(() => {
+      shareModal.classList.add("show");
+    }, 10);
+  }
+
+  // Close share modal
+  function closeShareModalHandler() {
+    shareModal.classList.remove("show");
+    setTimeout(() => {
+      shareModal.classList.add("hidden");
+    }, 300);
+  }
+
+  // Build a shareable URL for the activity
+  function getShareUrl(activityName) {
+    const base = window.location.origin + window.location.pathname;
+    return `${base}?activity=${encodeURIComponent(activityName)}`;
+  }
+
+  // Build the share text content
+  function buildShareText(name, description, schedule) {
+    return `Check out "${name}" at ${SCHOOL_NAME}!\n${description}\nSchedule: ${schedule}`;
+  }
+
+  // Share on Facebook
+  function shareOnFacebook(name, description, schedule) {
+    const url = getShareUrl(name);
+    const text = buildShareText(name, description, schedule);
+    const fbUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}&quote=${encodeURIComponent(text)}`;
+    window.open(fbUrl, "_blank", "noopener,noreferrer");
+  }
+
+  // Share on Twitter
+  function shareOnTwitter(name, description, schedule) {
+    const url = getShareUrl(name);
+    const text = buildShareText(name, description, schedule);
+    const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}&hashtags=MergingtonHighSchool,ExtracurricularActivities`;
+    window.open(twitterUrl, "_blank", "noopener,noreferrer");
+  }
+
+  // Share on WhatsApp
+  function shareOnWhatsApp(name, description, schedule) {
+    const url = getShareUrl(name);
+    const text = buildShareText(name, description, schedule) + `\n${url}`;
+    const whatsappUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`;
+    window.open(whatsappUrl, "_blank", "noopener,noreferrer");
+  }
+
+  // Share via Email
+  function shareViaEmail(name, description, schedule) {
+    const url = getShareUrl(name);
+    const subject = `Join "${name}" at ${SCHOOL_NAME}!`;
+    const body = buildShareText(name, description, schedule) + `\n\nLearn more: ${url}`;
+    window.location.href = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+  }
+
+  // Event listeners for share modal
+  closeShareModalBtn.addEventListener("click", closeShareModalHandler);
+
+  window.addEventListener("click", (event) => {
+    if (event.target === shareModal) {
+      closeShareModalHandler();
+    }
+  });
+
+  document.getElementById("share-facebook").addEventListener("click", () => {
+    shareOnFacebook(
+      shareModal.dataset.activityName,
+      shareModal.dataset.description,
+      shareModal.dataset.schedule
+    );
+  });
+
+  document.getElementById("share-twitter").addEventListener("click", () => {
+    shareOnTwitter(
+      shareModal.dataset.activityName,
+      shareModal.dataset.description,
+      shareModal.dataset.schedule
+    );
+  });
+
+  document.getElementById("share-whatsapp").addEventListener("click", () => {
+    shareOnWhatsApp(
+      shareModal.dataset.activityName,
+      shareModal.dataset.description,
+      shareModal.dataset.schedule
+    );
+  });
+
+  document.getElementById("share-email").addEventListener("click", () => {
+    shareViaEmail(
+      shareModal.dataset.activityName,
+      shareModal.dataset.description,
+      shareModal.dataset.schedule
+    );
+  });
 
   // Show message function
   function showMessage(text, type) {
